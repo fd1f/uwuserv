@@ -24,19 +24,6 @@ type ParsedPDU struct {
 	Unsigned       json.RawMessage                `json:"unsigned,omitempty"`
 }
 
-func Hash(data any) string {
-	var contentBytes []byte
-	var sum []byte
-	json.Unmarshal(contentBytes, &data)
-	canonicalised, _ := canonicaljson.CanonicalJSON(contentBytes)
-	// if there's a better way i want to know immediately. i wrote this while offline,
-	// i can't encode the [32]byte value Sum256 returns :(
-	for _, v := range sha256.Sum256(canonicalised) {
-		sum = append(sum, v)
-	}
-	return base64.RawStdEncoding.EncodeToString(sum)
-}
-
 func Sign(key federation.SigningKey, serverName string, content json.RawMessage) (map[id.KeyID]string, error) {
 	sig, err := key.SignJSON(content)
 	if err != nil {
