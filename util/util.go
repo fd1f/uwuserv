@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"maunium.net/go/mautrix/crypto/canonicaljson"
 	"maunium.net/go/mautrix/federation"
@@ -11,11 +12,17 @@ import (
 )
 
 type ParsedPDU struct {
-	// TODO: rest of the fields. currently i have enough to be useful
+	AuthEvents     []id.EventID                   `json:"auth_events"`
 	Content        json.RawMessage                `json:"content"`
+	Depth          int                            `json:"depth"`
+	Hashes         json.RawMessage                `json:"hashes"`
+	OriginServerTS int                            `json:"origin_server_ts"`
+	PrevEvents     []id.EventID                   `json:"prev_events"`
+	RoomID         id.RoomID                      `json:"room_id"`
 	Sender         id.UserID                      `json:"sender"`
 	Signatures     map[string]map[id.KeyID]string `json:"signatures"`
-	OriginServerTS int32                          `json:"origin_server_ts"`
+	Type           string                         `json:"type"`
+	Unsigned       json.RawMessage                `json:"unsigned"`
 }
 
 func Hash(data any) string {
@@ -31,21 +38,28 @@ func Hash(data any) string {
 	return base64.RawStdEncoding.EncodeToString(sum)
 }
 
-func Sign(key federation.SigningKey, serverName string, content json.RawMessage) (json.RawMessage, error) {
-	// unmarshal
-	// contentJSON, _ := json.Marshal(&content)
-	// sign and return
-	var parsedContent ParsedPDU
+// TODO: move this to the PS so it can just access its own
+// server name. it's only here because i am too lazy to try copying
+// it over in micro, while editing on my phone. Hacker's Keyboard acting up
+func Check(content json.RawMessage, serverName string) bool {
+	var pdu ParsedPDU
+	json.Unmarshal(content, pdu)
+	// is it from the AS?
+	self := strings.HasPrefix(pdu.Sender.Localpart(), "_uwu") && pdu.Sender.Homeserver() == serverName
+	// only uwuify m.room.message and non-AS events
+	if pdu.Type != "m.room.message" || self {
+		return true
+	}
+	// TODO: pass to AS
+	return false
+}
+
+func Sign(key federation.SigningKey, serverName string, content json.RawMessage) (map[id.KeyID]string, error) {
 	// don't you need to use the redaction algorithm before signing?
 	// maybe delete signatures from a copy of the map
-	sig, _ := key.SignJSON(content)
-	json.Unmarshal(content, &parsedContent)
-	parsedContent.Signatures[serverName] = map[id.KeyID]string{
-		key.ID: sig,
-	}
-	finalContent, err := json.Marshal(parsedContent)
+	sig, err := key.SignJSON(content)
 	if err != nil {
 		return nil, err
 	}
-	return finalContent, nil
+	return map[id.KeyID]string{key.ID: sig}, nil
 }

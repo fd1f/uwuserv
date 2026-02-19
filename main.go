@@ -29,15 +29,6 @@ type Config struct {
 	ListenAddress string `json:"listen_address"`
 }
 
-//			nc (s *Server) Sign(w http.ResponseWriter, r *http.Request) {
-//				r jsonBody []byte
-//				dy, err := io.ReadAll(r.Body)
-//		if err != nil {
-//			mautrix.MNotJSON.Write(w)
-//		}
-//		json.Unmarshal(jsonBody
-//	}
-
 func (s *Server) Sign(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -53,6 +44,11 @@ func (s *Server) Sign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// check
+	ok := util.Check(content, s.ServerName)
+	if !ok {
+		mautrix.MForbidden.Write(w)
+		return
+	}
 	// sign the json
 	signed, err := util.Sign(s.PolicyKey, s.Client.ServerName, content)
 	if err != nil {
@@ -78,10 +74,12 @@ func main() {
 	flag.Parse()
 
 	if generateConfig {
+		policyKey := federation.GenerateSigningKey()
+		policyKey.ID = "policy_server"
 		config := &Config{
 			ServerName:    "hostname.here",
 			FederationKey: federation.GenerateSigningKey().SynapseString(),
-			PolicyKey:     federation.GenerateSigningKey().SynapseString(),
+			PolicyKey:     policyKey.SynapseString(),
 			ListenAddress: "localhost:8089",
 		}
 		bytes, err := json.Marshal(&config)
@@ -135,7 +133,7 @@ func main() {
 			Version: "0.1.0",
 		},
 	}
-	http.HandleFunc("POST /_matrix/policy/v2/sign", server.Sign)
+	http.HandleFunc("POST /_matrix/policy/v1/sign", server.Sign)
 	http.HandleFunc("/_matrix/key/v2/server", keyServer.GetServerKey)
 	http.HandleFunc("/_matrix/federation/v1/version", keyServer.GetServerVersion)
 	log.Print("Listening on ", config.ListenAddress)
