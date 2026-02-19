@@ -9,9 +9,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+<<<<<<< Updated upstream
 
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/federation"
+=======
+	"strings"
+
+	"maunium.net/go/mautrix"
+	"maunium.net/go/mautrix/federation"
+	"maunium.net/go/mautrix/id"
+>>>>>>> Stashed changes
 
 	"codeberg.org/plate/uwuserv/util"
 )
@@ -29,6 +37,22 @@ type Config struct {
 	ListenAddress string `json:"listen_address"`
 }
 
+<<<<<<< Updated upstream
+=======
+func (s *Server) Check(content json.RawMessage) bool {
+	var pdu util.ParsedPDU
+	json.Unmarshal(content, &pdu)
+	// is it from the AS?
+	self := strings.HasPrefix(pdu.Sender.Localpart(), "_uwu") && pdu.Sender.Homeserver() == s.ServerName
+	// only uwuify m.room.message and non-AS events
+	if pdu.Type != "m.room.message" || self {
+		return true
+	}
+	// TODO: pass to AS
+	return false
+}
+
+>>>>>>> Stashed changes
 func (s *Server) Sign(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -44,7 +68,11 @@ func (s *Server) Sign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// check
+<<<<<<< Updated upstream
 	ok := util.Check(content, s.ServerName)
+=======
+	ok := s.Check(content)
+>>>>>>> Stashed changes
 	if !ok {
 		mautrix.MForbidden.Write(w)
 		return
@@ -75,7 +103,11 @@ func main() {
 
 	if generateConfig {
 		policyKey := federation.GenerateSigningKey()
+<<<<<<< Updated upstream
 		policyKey.ID = "policy_server"
+=======
+		policyKey.ID = id.NewKeyID(id.KeyAlgorithmEd25519, "policy_server")
+>>>>>>> Stashed changes
 		config := &Config{
 			ServerName:    "hostname.here",
 			FederationKey: federation.GenerateSigningKey().SynapseString(),
@@ -93,6 +125,7 @@ func main() {
 		fmt.Println("Generated config")
 		os.Exit(0)
 	}
+<<<<<<< Updated upstream
 
 	file, err := os.Open(configFile)
 	if err != nil {
@@ -100,6 +133,10 @@ func main() {
 	}
 	config := Config{}
 	bytes, err := io.ReadAll(file)
+=======
+	config := Config{}
+	bytes, err := os.ReadFile(configFile)
+>>>>>>> Stashed changes
 	if err != nil {
 		log.Fatal(err)
 	}

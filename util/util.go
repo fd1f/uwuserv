@@ -4,7 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+<<<<<<< Updated upstream
 	"strings"
+=======
+>>>>>>> Stashed changes
 
 	"maunium.net/go/mautrix/crypto/canonicaljson"
 	"maunium.net/go/mautrix/federation"
@@ -38,6 +41,7 @@ func Hash(data any) string {
 	return base64.RawStdEncoding.EncodeToString(sum)
 }
 
+<<<<<<< Updated upstream
 // TODO: move this to the PS so it can just access its own
 // server name. it's only here because i am too lazy to try copying
 // it over in micro, while editing on my phone. Hacker's Keyboard acting up
@@ -54,6 +58,8 @@ func Check(content json.RawMessage, serverName string) bool {
 	return false
 }
 
+=======
+>>>>>>> Stashed changes
 func Sign(key federation.SigningKey, serverName string, content json.RawMessage) (map[id.KeyID]string, error) {
 	// don't you need to use the redaction algorithm before signing?
 	// maybe delete signatures from a copy of the map
