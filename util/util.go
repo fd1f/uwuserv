@@ -21,7 +21,7 @@ type ParsedPDU struct {
 	Sender         id.UserID                      `json:"sender"`
 	Signatures     map[string]map[id.KeyID]string `json:"signatures"`
 	Type           string                         `json:"type"`
-	Unsigned       json.RawMessage                `json:"unsigned"`
+	Unsigned       json.RawMessage                `json:"unsigned,omitempty"`
 }
 
 func Hash(data any) string {
@@ -38,8 +38,6 @@ func Hash(data any) string {
 }
 
 func Sign(key federation.SigningKey, serverName string, content json.RawMessage) (map[id.KeyID]string, error) {
-	// don't you need to use the redaction algorithm before signing?
-	// maybe delete signatures from a copy of the map
 	sig, err := key.SignJSON(content)
 	if err != nil {
 		return nil, err
